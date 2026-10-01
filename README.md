@@ -74,7 +74,7 @@ Example response (`decode_violation` → `47.41(j)`):
 
 ## Rate limiting
 
-60 requests/minute per IP (best-effort, per edge isolate). Exceeding it returns HTTP `429` with a JSON-RPC error and `retry_after_seconds`.
+60 requests/minute per IP, enforced in the Worker (best-effort per edge location — a distributed flood across many locations can exceed it briefly). Exceeding it returns HTTP `429` with a JSON-RPC error and `retry_after_seconds`.
 
 ## Regenerating the data pack
 
@@ -93,4 +93,5 @@ Source of truth: NYC DOHMH via NYC Open Data (`dsg6-ifza`), pulled 2026-09-19.
 - `src/data.js` — packed center aggregates (generated)
 - `src/codes.js` — trimmed violation translation table (generated)
 - `pack.py` — regenerable pack script
-- `deploy.py` — Cloudflare API deploy (no wrangler needed)
+- `deploy.py` — Cloudflare API deploy (no wrangler needed; deploys to the
+  `Mrswelim@gmail.com` account that owns the mehyar.us zone)

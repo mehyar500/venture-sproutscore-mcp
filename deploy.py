@@ -25,6 +25,8 @@ CRED = "custom.cloudflare"
 HOSTS = ["api.cloudflare.com"]
 SCRIPT = "sproutscore-mcp"
 CUSTOM_HOST = "mcp.sproutscore.mehyar.us"
+# Mrswelim@gmail.com's Account - owns the mehyar.us zone (custom domain target)
+ACCOUNT = "621600637337cc1c9ecb7095508bc732"
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "src")
 
@@ -79,9 +81,7 @@ def read_src(name):
 
 
 def main():
-    st, accounts = api("/accounts")
-    assert st == 200 and accounts.get("success"), accounts
-    account = accounts["result"][0]["id"]
+    account = ACCOUNT
     print("account:", account)
 
     metadata = json.dumps({
@@ -100,18 +100,24 @@ def main():
     assert st == 200 and res.get("success"), res
 
     st, res = api(f"/accounts/{account}/workers/scripts/{SCRIPT}/subdomain",
-                  "PATCH", json.dumps({"enabled": True}))
-    print("subdomain:", st, json.dumps(res)[:300])
+                  "POST", json.dumps({"enabled": True}))
+    print("subdomain:", st, "enabled" if res.get("success") else json.dumps(res)[:300])
 
-    st, res = api(f"/accounts/{account}/workers/domains", "POST",
-                  json.dumps({"hostname": CUSTOM_HOST, "service": SCRIPT}))
-    ok = res.get("success") is True
-    print("custom domain:", st, "success" if ok else json.dumps(res)[:500])
+    # custom domain via workers/domains (PUT {zone_id, hostname, service})
+    st, zones = api("/zones?name=mehyar.us")
+    zone_id = None
+    if st == 200 and zones.get("success") and zones.get("result"):
+        zone_id = zones["result"][0]["id"]
+    if zone_id:
+        st, res = api(f"/accounts/{account}/workers/domains", "PUT",
+                      json.dumps({"zone_id": zone_id, "hostname": CUSTOM_HOST,
+                                  "service": SCRIPT}))
+        ok = res.get("success") is True
+        print("custom domain:", st, "success" if ok else json.dumps(res)[:500])
+    else:
+        print("custom domain: skipped (zone lookup failed)")
 
-    st, res = api(f"/accounts/{account}/workers/scripts/{SCRIPT}")
-    if st == 200 and res.get("success"):
-        print("script id:", res["result"].get("id"), "modified:",
-              res["result"].get("modified_on"))
+    print("deploy complete.")
 
 
 if __name__ == "__main__":

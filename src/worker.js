@@ -391,7 +391,8 @@ function corsHeaders() {
   };
 }
 
-function usageDoc() {
+function usageDoc(host) {
+  const endpoint = "https://" + host + "/mcp";
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SproutScore MCP Server</title>
 <style>body{font-family:system-ui,sans-serif;max-width:760px;margin:2rem auto;padding:0 1rem;line-height:1.6}code,pre{background:#f4f4f5;padding:.2em .4em;border-radius:6px}pre{padding:1em;overflow:auto}.warn{background:#fffbeb;border:1px solid #f59e0b;padding:1em;border-radius:8px}</style>
@@ -402,7 +403,7 @@ NYC childcare-center inspection summaries.</p>
 <div class="warn"><strong>Data caveat:</strong> ${DATA_CAVEAT}<br>
 <strong>Decode caveat:</strong> ${DECODE_CAVEAT}</div>
 <h2>Endpoint</h2>
-<p><code>POST /mcp</code> with <code>Content-Type: application/json</code>, JSON-RPC 2.0 body.
+<p><code>POST ${endpoint}</code> with <code>Content-Type: application/json</code>, JSON-RPC 2.0 body.
 Supports <code>Accept: application/json</code> and <code>Accept: text/event-stream</code> (SSE).</p>
 <h2>Tools</h2>
 <ul>
@@ -411,13 +412,13 @@ Supports <code>Accept: application/json</code> and <code>Accept: text/event-stre
 <li><strong>decode_violation</strong> — violation code (e.g. <code>47.41(j)</code>) to plain-English meaning, severity tier, category. Unknown codes return a clean error.</li>
 </ul>
 <h2>Example</h2>
-<pre>curl -X POST https://ENDPOINT/mcp \\
+<pre>curl -X POST ${endpoint} \\
   -H 'Content-Type: application/json' -H 'Accept: application/json' \\
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call",
        "params":{"name":"search_centers","arguments":{"query":"jackson","borough":"queens"}}}'
 </pre>
 <h2>Rate limit</h2>
-<p>60 requests/minute per IP (best-effort). HTTP 429 with <code>retry_after_seconds</code> when exceeded.</p>
+<p>60 requests/minute per IP (best-effort per edge location). HTTP 429 with <code>retry_after_seconds</code> when exceeded.</p>
 <p style="color:#666">Dataset: ${DATA_META.centers} centers, ${DATA_META.inspections} inspections, data as of ${DATA_META.data_as_of}. Source: ${DATA_META.source}.</p>
 </body></html>`;
 }
@@ -429,7 +430,7 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders() });
     }
     if (url.pathname === "/" && request.method === "GET") {
-      return new Response(usageDoc(), {
+      return new Response(usageDoc(url.host), {
         headers: { "Content-Type": "text/html; charset=utf-8", ...corsHeaders() },
       });
     }
